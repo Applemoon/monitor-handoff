@@ -1,0 +1,23 @@
+# A version tag (v0.1.0) builds the app and publishes it as a release, which the one-command
+# install and the app's update check take.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag matches the app's version
+        run: test "${GITHUB_REF_NAME#v}" = "$(plutil -extract CFBundleShortVersionString raw Info.plist)"
+      - name: Build the app the way a clone does
+        run: ./install.sh
+      - name: Zip it
+        run: ditto -c -k --keepParent "$HOME/Applications/Monitor Handoff.app" Monitor-Handoff.zip
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" Monitor-Handoff.zip --title "$GITHUB_REF_NAME" --generate-notes

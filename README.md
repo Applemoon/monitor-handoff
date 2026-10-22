@@ -29,7 +29,7 @@ the menu.
 
 ## Requirements
 
-- An Apple Silicon Mac, macOS 14 or later, the Command Line Tools (no Xcode).
+- An Apple Silicon Mac, macOS 14 or later.
 - A monitor with DDC/CI on (usually a setting in its menu).
 - One external monitor. Several have not been tested: when a second one is connected, the app
   puts back a display it removed, stops following and says so in the menu.
@@ -42,9 +42,12 @@ the menu.
 curl -fsSL https://raw.githubusercontent.com/Applemoon/monitor-handoff/main/install.sh | bash
 ```
 
-Downloads the source, builds it, installs it into ~/Applications and starts it; run it again to
-update. In a clone, `./install.sh` does the same with the code next to it. Open at Login is on
-from the first launch and off from the menu.
+Installs the latest release into ~/Applications and starts it; run it again to update. In a
+clone, `./install.sh` builds the code next to it instead, with the Command Line Tools (no Xcode).
+Open at Login is on from the first launch and off from the menu.
+
+A version tag (`v0.1.0`, matching `CFBundleShortVersionString` in `Info.plist`) makes GitHub
+Actions build the app and publish the release.
 
 ## Notes from the monitor it was built on (Alienware AW2724DM)
 
