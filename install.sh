@@ -44,5 +44,6 @@ mkdir -p "$HOME/Applications"
 rm -rf "$dest"
 ditto "$app" "$dest"
 touch "$dest" # ditto carries the old date, by which macOS takes the build for the old one
-open "$dest"
+# Right after the old copy quits, Launch Services can still refuse to start it (error -600).
+for try in 1 2 3; do open "$dest" && break; [[ $try == 3 ]] && exit 1; sleep 1; done
 echo "Installed $dest"
