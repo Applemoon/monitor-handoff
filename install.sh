@@ -15,9 +15,17 @@ trap 'rm -rf "$tmp"' EXIT
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 app="$tmp/Monitor Handoff.app"
 dest="$HOME/Applications/Monitor Handoff.app"
-mkdir -p "$app/Contents/MacOS"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$here/Info.plist" "$app/Contents/"
 swiftc -parse-as-library -O -target arm64-apple-macos14 -o "$app/Contents/MacOS/MonitorHandoff" "$here"/Sources/*.swift
+# The icon: every size macOS asks for, from icon.png (drawn by icon.swift).
+iconset="$tmp/AppIcon.iconset"
+mkdir -p "$iconset"
+for s in 16 32 128 256 512; do
+  sips -z $s $s "$here/icon.png" --out "$iconset/icon_${s}x${s}.png" >/dev/null
+  sips -z $((s * 2)) $((s * 2)) "$here/icon.png" --out "$iconset/icon_${s}x${s}@2x.png" >/dev/null
+done
+iconutil -c icns "$iconset" -o "$app/Contents/Resources/AppIcon.icns"
 codesign --force -s - "$app"
 if pgrep -xq MonitorHandoff; then # quit it first: the bundle is about to be replaced
   osascript -e 'tell application id "com.auvarov.monitor-handoff" to quit'
