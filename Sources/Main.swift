@@ -51,6 +51,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.removeAllItems()
         menu.addItem(.sectionHeader(title: snapshot.model ?? "Monitor"))
         if snapshot.notResponding { menu.addItem(disabled: "Not responding") }
+        if !snapshot.inputs.isEmpty && !snapshot.notResponding {
+            let item = NSMenuItem()
+            item.view = brightnessView()
+            menu.addItem(item)
+            menu.addItem(.separator())
+        }
         if snapshot.inputs.isEmpty { menu.addItem(disabled: "Reading the monitor…") }
         // A hidden input still shows while the monitor is on it, so the check mark has a place.
         for code in snapshot.inputs where !Inputs.isHidden(code) || snapshot.current == code {
@@ -78,6 +84,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func select(_ sender: NSMenuItem) {
         follower.select(UInt8(sender.tag))
+    }
+
+    /// The brightness row: a slider between two suns, as in Control Center. It opens at the last
+    /// value read and moves to the monitor's own once the read comes back.
+    private func brightnessView() -> NSView {
+        let slider = NSSlider(value: Double(brightness.value), minValue: 0, maxValue: Double(brightness.max),
+                              target: self, action: #selector(brightnessChanged(_:)))
+        slider.isContinuous = true
+        slider.controlSize = .small
+        let low = NSImageView(image: NSImage(systemSymbolName: "sun.min", accessibilityDescription: "Dimmer")!)
+        let high = NSImageView(image: NSImage(systemSymbolName: "sun.max", accessibilityDescription: "Brighter")!)
+        for sun in [low, high] { sun.contentTintColor = .secondaryLabelColor }
+        let row = NSStackView(views: [low, slider, high])
+        row.spacing = 6
+        row.edgeInsets = NSEdgeInsets(top: 4, left: 14, bottom: 4, right: 14)
+        row.frame = NSRect(x: 0, y: 0, width: 240, height: 28)
+        follower.readBrightness { [weak self, weak slider] value, max in
+            self?.brightness = (value, max)
+            slider?.maxValue = Double(max)
+            slider?.doubleValue = Double(value)
+        }
+        return row
+    }
+
+    private var brightness = (value: 50, max: 100)
+
+    @objc private func brightnessChanged(_ sender: NSSlider) {
+        brightness.value = Int(sender.doubleValue.rounded())
+        follower.setBrightness(brightness.value)
     }
 
     @objc private func configure() {

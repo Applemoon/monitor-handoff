@@ -66,14 +66,14 @@ final class DDC {
         reply.last == reply.dropLast().reduce(UInt8(0x50), ^)
     }
 
-    /// A VCP feature's current value, or nil when the monitor does not answer.
-    func read(_ code: UInt8) -> UInt16? {
+    /// A VCP feature's current and maximum values, or nil when the monitor does not answer.
+    func read(_ code: UInt8) -> (current: UInt16, max: UInt16)? {
         for _ in 0..<3 {
             guard send([0x82, 0x01, code]) else { return nil }
             usleep(50_000)
             guard let r = receive(12) else { return nil }
             if DDC.valid(r[0..<11]), r[2] == 0x02, r[3] == 0x00, r[4] == code {
-                return UInt16(r[8]) << 8 | UInt16(r[9])
+                return (UInt16(r[8]) << 8 | UInt16(r[9]), UInt16(r[6]) << 8 | UInt16(r[7]))
             }
             usleep(50_000)
         }

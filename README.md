@@ -9,6 +9,7 @@ the menu.
 
 - The menu lists the monitor's inputs, as the monitor itself reports them, checks the current one
   and switches on a click. This Mac's input carries a laptop icon.
+- A brightness slider sets the monitor's own backlight and opens at its current value.
 - Configure… gives the inputs names ("Personal", "Work"), hides unused ones and picks this Mac's
   input when the link type does not tell it.
 - The menu bar icon is struck through while the monitor is handed over and shows a warning when

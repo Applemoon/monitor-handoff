@@ -90,6 +90,35 @@ final class Follower {
         }
     }
 
+    /// The monitor's brightness, read when the menu opens rather than on every tick.
+    func readBrightness(_ completion: @escaping (_ value: Int, _ max: Int) -> Void) {
+        queue.async { [self] in
+            guard let brightness = ddc.read(0x10), brightness.max > 0 else { return }
+            DispatchQueue.main.async { completion(Int(brightness.current), Int(brightness.max)) }
+        }
+    }
+
+    // A dragged slider sends values faster than the monitor takes them: only the latest is written.
+    private let brightnessLock = NSLock()
+    private var pendingBrightness: Int?
+
+    func setBrightness(_ value: Int) {
+        brightnessLock.lock()
+        let flushQueued = pendingBrightness != nil
+        pendingBrightness = value
+        brightnessLock.unlock()
+        guard !flushQueued else { return }
+        queue.async { [self] in
+            brightnessLock.lock()
+            let latest = pendingBrightness
+            pendingBrightness = nil
+            brightnessLock.unlock()
+            guard let latest else { return }
+            _ = ddc.write(0x10, UInt16(latest))
+            usleep(50_000) // the monitor drops a write that follows the last one too closely
+        }
+    }
+
     /// A display removed with no app left to bring it back would stay dark until logout.
     func restore() {
         queue.sync {
@@ -113,7 +142,7 @@ final class Follower {
         }
         failures = 0
         // The low byte is the input: Dell puts something else into the high one.
-        let input = UInt8(value & 0xFF)
+        let input = UInt8(value.current & 0xFF)
         if Date() >= settleUntil {
             current = input
             follow(input)
