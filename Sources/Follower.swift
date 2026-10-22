@@ -23,6 +23,8 @@ final class Follower {
     // A switch from the menu takes the monitor a moment, and its old input read meanwhile must not undo it.
     private static let settle = 4.0
     private static let failuresBeforeWarning = 3
+    // Match Built-in Display copies the built-in screen only this soon after the last input.
+    private static let activeWindow = 30.0
 
     private let queue = DispatchQueue(label: "monitor-handoff.follower")
     private let ddc = DDC()
@@ -118,8 +120,27 @@ final class Follower {
     func readBrightness(_ completion: @escaping (_ value: Int, _ max: Int) -> Void) {
         queue.async { [self] in
             guard let brightness = ddc.read(0x10), brightness.max > 0 else { return }
+            brightnessMax = Int(brightness.max)
             DispatchQueue.main.async { completion(Int(brightness.current), Int(brightness.max)) }
         }
+    }
+
+    private var brightnessMax = 100
+    private var lastMatchedBrightness: Int?
+
+    /// Match Built-in Display: the monitor takes the built-in screen's brightness, which macOS sets
+    /// by the light sensor. Not real auto-brightness: the sensor is silent while the built-in
+    /// screen sleeps, so with the lid closed or the screen asleep the monitor keeps its last value.
+    private func followBuiltinBrightness() {
+        guard defaults.bool(forKey: "matchBuiltin"), let builtin = Displays.builtinBrightness() else { return }
+        // An idle Mac dims its screen before it sleeps; copied, that dim would stick to the monitor
+        // until the Mac wakes. A minute without input goes before any dimming.
+        let anyInput = CGEventType(rawValue: ~0)!
+        guard CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: anyInput) < Follower.activeWindow else { return }
+        let target = min(Int((builtin * Double(brightnessMax)).rounded()), brightnessMax)
+        // Small steps are skipped: the sensor drifts, and each write is a DDC round.
+        if let last = lastMatchedBrightness, abs(last - target) < 2 { return }
+        if ddc.write(0x10, UInt16(target)) { lastMatchedBrightness = target }
     }
 
     // A dragged slider sends values faster than the monitor takes them: only the latest is written.
@@ -167,6 +188,7 @@ final class Follower {
         }
         if identity == nil { identity = ddc.identity() }
         if let link = DDC.downstream() { downstream = link }
+        followBuiltinBrightness()
         guard let value = ddc.read(0x60) else {
             failures += 1
             return publish()

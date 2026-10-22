@@ -18,6 +18,20 @@ enum Displays {
         return Array(ids.prefix(Int(count)))
     }
 
+    private typealias GetBrightness = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
+    private static let getBrightness: GetBrightness? = {
+        let lib = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY)
+        return dlsym(lib, "DisplayServicesGetBrightness").map { unsafeBitCast($0, to: GetBrightness.self) }
+    }()
+
+    /// The built-in screen's brightness, 0...1, as macOS sets it by the light sensor; nil with
+    /// the lid closed.
+    static func builtinBrightness() -> Double? {
+        guard let getBrightness, let builtin = active().first(where: { CGDisplayIsBuiltin($0) != 0 }) else { return nil }
+        var value: Float = 0
+        return getBrightness(builtin, &value) == 0 ? Double(value) : nil
+    }
+
     /// The active display with these EDID vendor and product codes.
     static func find(vendor: UInt32, product: UInt32) -> CGDirectDisplayID? {
         active().first { CGDisplayVendorNumber($0) == vendor && CGDisplayModelNumber($0) == product }

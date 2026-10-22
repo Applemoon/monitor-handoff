@@ -74,6 +74,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let item = NSMenuItem()
             item.view = brightnessView()
             menu.addItem(item)
+            let match = NSMenuItem(title: "Match Built-in Display", action: #selector(toggleMatchBuiltin), keyEquivalent: "")
+            match.target = self
+            match.state = UserDefaults.standard.bool(forKey: "matchBuiltin") ? .on : .off
+            menu.addItem(match)
             menu.addItem(.separator())
         }
         if snapshot.inputs.isEmpty { menu.addItem(disabled: "Reading the monitor…") }
@@ -102,6 +106,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                               target: self, action: #selector(brightnessChanged(_:)))
         slider.isContinuous = true
         slider.controlSize = .small
+        // Matching the built-in screen, the slider only shows the level.
+        slider.isEnabled = !UserDefaults.standard.bool(forKey: "matchBuiltin")
         let low = NSImageView(image: NSImage(systemSymbolName: "sun.min", accessibilityDescription: "Dimmer")!)
         let high = NSImageView(image: NSImage(systemSymbolName: "sun.max", accessibilityDescription: "Brighter")!)
         for sun in [low, high] { sun.contentTintColor = .secondaryLabelColor }
@@ -118,6 +124,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private var brightness = (value: 50, max: 100)
+
+    /// The monitor takes the built-in screen's brightness; the slider then only shows it.
+    @objc private func toggleMatchBuiltin() {
+        let defaults = UserDefaults.standard
+        defaults.set(!defaults.bool(forKey: "matchBuiltin"), forKey: "matchBuiltin")
+    }
 
     @objc private func brightnessChanged(_ sender: NSSlider) {
         brightness.value = Int(sender.doubleValue.rounded())

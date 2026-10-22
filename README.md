@@ -11,7 +11,11 @@ the menu.
 
 - The menu lists the monitor's inputs, as the monitor itself reports them, checks the current one
   and switches on a click. This Mac's input carries a laptop icon.
-- A brightness slider sets the monitor's own backlight and opens at its current value.
+- A brightness slider sets the monitor's own backlight and opens at its current value. With Match
+  Built-in Display on, the monitor takes the built-in screen's brightness, which macOS sets by its
+  light sensor, and the slider only shows it. It copies only while this Mac is in use: an idle
+  Mac dims its screen before sleep, and its sensor is silent while the screen sleeps, so
+  meanwhile the monitor keeps its last brightness.
 - Configure… gives the inputs names ("Personal", "Work"), hides unused ones and picks this Mac's
   input when the link type does not tell it.
 - When this Mac locks or sleeps while the monitor shows it, the monitor can switch to another
