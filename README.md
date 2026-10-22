@@ -19,7 +19,9 @@ the menu.
 ## Requirements
 
 - An Apple Silicon Mac, macOS 14 or later, the Command Line Tools (no Xcode).
-- A monitor with DDC/CI on (usually a setting in its menu). One external monitor.
+- A monitor with DDC/CI on (usually a setting in its menu).
+- One external monitor. Several have not been tested: when a second one is connected, the app
+  puts back a display it removed, stops following and says so in the menu.
 - Private APIs: IOAVService for DDC, CGSConfigureDisplayEnabled to remove the display. A macOS
   update may break either.
 

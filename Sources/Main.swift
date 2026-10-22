@@ -43,12 +43,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateIcon() {
-        statusItem.button?.image =
-            snapshot.notResponding ? Icons.notResponding : snapshot.handedOver ? Icons.handedOver : Icons.monitor
+        statusItem.button?.image = snapshot.notResponding || snapshot.severalMonitors
+            ? Icons.notResponding : snapshot.handedOver ? Icons.handedOver : Icons.monitor
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
+        if snapshot.severalMonitors {
+            menu.addItem(disabled: "Only one external monitor is supported")
+        } else {
+            addMonitorItems(to: menu)
+        }
+        menu.addItem(.separator())
+        let configure = NSMenuItem(title: "Configure…", action: #selector(configure), keyEquivalent: ",")
+        configure.target = self
+        menu.addItem(configure)
+        let login = NSMenuItem(title: "Open at Login", action: #selector(toggleLogin), keyEquivalent: "")
+        login.target = self
+        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        menu.addItem(login)
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Quit Monitor Handoff", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+    }
+
+    /// The model, the brightness and the inputs.
+    private func addMonitorItems(to menu: NSMenu) {
         menu.addItem(.sectionHeader(title: snapshot.model ?? "Monitor"))
         if snapshot.notResponding { menu.addItem(disabled: "Not responding") }
         if !snapshot.inputs.isEmpty && !snapshot.notResponding {
@@ -70,16 +89,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if code == snapshot.own { item.attributedTitle = Icons.thisMac(after: Inputs.name(code)) }
             menu.addItem(item)
         }
-        menu.addItem(.separator())
-        let configure = NSMenuItem(title: "Configure…", action: #selector(configure), keyEquivalent: ",")
-        configure.target = self
-        menu.addItem(configure)
-        let login = NSMenuItem(title: "Open at Login", action: #selector(toggleLogin), keyEquivalent: "")
-        login.target = self
-        login.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        menu.addItem(login)
-        menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit Monitor Handoff", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }
 
     @objc private func select(_ sender: NSMenuItem) {

@@ -117,6 +117,22 @@ final class DDC {
         return (UInt32(data[8]) << 8 | UInt32(data[9]), UInt32(data[10]) | UInt32(data[11]) << 8)
     }
 
+    /// How many external outputs carry a monitor's DDC channel: the app handles one.
+    static func externalCount() -> Int {
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("DCPAVServiceProxy"), &iterator) == KERN_SUCCESS else { return 0 }
+        defer { IOObjectRelease(iterator) }
+        var count = 0
+        var entry = IOIteratorNext(iterator)
+        while entry != 0 {
+            let location = IORegistryEntryCreateCFProperty(entry, "Location" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? String
+            if location == "External" { count += 1 }
+            IOObjectRelease(entry)
+            entry = IOIteratorNext(iterator)
+        }
+        return count
+    }
+
     /// The link type the monitor gets from this Mac ("HDMI", "DP"): the Transport property
     /// of the external framebuffer.
     static func downstream() -> String? {
