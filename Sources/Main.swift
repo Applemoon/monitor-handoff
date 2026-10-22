@@ -78,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             match.target = self
             match.state = UserDefaults.standard.bool(forKey: "matchBuiltin") ? .on : .off
             menu.addItem(match)
+            if let modes = snapshot.pictureModes { menu.addItem(pictureModeItem(modes)) }
             menu.addItem(.separator())
         }
         if snapshot.inputs.isEmpty { menu.addItem(disabled: "Reading the monitor…") }
@@ -97,6 +98,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func select(_ sender: NSMenuItem) {
         follower.select(UInt8(sender.tag))
+    }
+
+    private var shownModes: [PictureMode] = []
+
+    /// Picture Mode, a submenu: the monitor's modes, checked by what the monitor reports once the
+    /// read comes back, so a mode picked with its buttons is checked too.
+    private func pictureModeItem(_ modes: PictureModes) -> NSMenuItem {
+        let submenu = NSMenu()
+        shownModes = []
+        var items: [(NSMenuItem, PictureMode)] = []
+        for section in modes.sections {
+            if let title = section.title { submenu.addItem(.sectionHeader(title: title)) }
+            for mode in section.modes {
+                let item = NSMenuItem(title: mode.name, action: #selector(selectPictureMode(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = shownModes.count
+                shownModes.append(mode)
+                items.append((item, mode))
+                submenu.addItem(item)
+            }
+        }
+        follower.readPictureModes(modes.codes) { values in
+            for (item, mode) in items { item.state = values[mode.isOn.code] == mode.isOn.value ? .on : .off }
+        }
+        let item = NSMenuItem(title: "Picture Mode", action: nil, keyEquivalent: "")
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func selectPictureMode(_ sender: NSMenuItem) {
+        follower.setPictureMode(shownModes[sender.tag])
     }
 
     /// The brightness row: a slider between two suns, as in Control Center. It opens at the last

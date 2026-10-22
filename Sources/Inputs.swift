@@ -54,10 +54,22 @@ enum Inputs {
 struct Capabilities {
     let model: String?
     let inputs: [UInt8]
+    private let string: String
 
     init(_ string: String) {
+        self.string = string
         model = string.firstMatch(of: #/model\(([^)]*)\)/#).map { String($0.1) }
-        inputs = string.firstMatch(of: #/[ (]60\(([0-9A-Fa-f ]*)\)/#)
-            .map { $0.1.split(separator: " ").compactMap { UInt8($0, radix: 16) } } ?? []
+        inputs = Capabilities.declared(0x60, in: string)
+    }
+
+    /// The values the monitor declares for a VCP feature: "14(01 05 08)" gives 1, 5 and 8.
+    func declared(_ code: UInt8) -> [UInt8] {
+        Capabilities.declared(code, in: string)
+    }
+
+    private static func declared(_ code: UInt8, in string: String) -> [UInt8] {
+        guard let pattern = try? Regex("[ (]\(String(format: "%02X", code))\\(([0-9A-Fa-f ]*)\\)").ignoresCase(),
+              let values = string.firstMatch(of: pattern)?.output[1].substring else { return [] }
+        return values.split(separator: " ").compactMap { UInt8($0, radix: 16) }
     }
 }

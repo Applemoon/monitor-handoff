@@ -16,6 +16,9 @@ the menu.
   light sensor, and the slider only shows it. It copies only while this Mac is in use: an idle
   Mac dims its screen before sleep, and its sensor is silent while the screen sleeps, so
   meanwhile the monitor keeps its last brightness.
+- Picture Mode lists the color presets and display modes the monitor declares, under their MCCS
+  standard names, with the current ones checked. A monitor with a profile gets the modes its own
+  menu shows instead; so far that is the AW2724DM with its 13 presets.
 - Configure… gives the inputs names ("Personal", "Work"), hides unused ones and picks this Mac's
   input when the link type does not tell it.
 - When this Mac locks or sleeps while the monitor shows it, the monitor can switch to another
@@ -51,3 +54,13 @@ from the first launch and off from the menu.
   work.
 - DDC reaches the monitor while it shows another input and while its display is removed from
   macOS, which is what lets the app follow it.
+- The preset is reported in Dell's VCP E2, which ignores writes. Standard and Game 1 are chosen
+  through the display mode (DC), sRGB, Warm, Cool and Custom Color through the color preset (14),
+  the rest through Dell's F0.
+
+## Adding a monitor's picture modes
+
+A profile in `Sources/PictureModes.swift` maps each mode to the VCP write that turns it on and the
+VCP value that says it is on. To map a monitor: write each value it declares for its mode-like
+features (in its capabilities string), read back what changed, and name each result after the
+monitor's own menu.

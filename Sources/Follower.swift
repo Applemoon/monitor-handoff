@@ -4,6 +4,7 @@ import AppKit
 struct Snapshot {
     var model: String?
     var inputs: [UInt8] = []
+    var pictureModes: PictureModes?
     var own: UInt8?
     var detectedOwn: UInt8?
     var current: UInt8?
@@ -125,6 +126,22 @@ final class Follower {
         }
     }
 
+    /// The VCP values that tell which picture modes are on, read when the menu opens.
+    func readPictureModes(_ codes: [UInt8], _ completion: @escaping ([UInt8: UInt16]) -> Void) {
+        queue.async { [self] in
+            var values: [UInt8: UInt16] = [:]
+            for code in codes {
+                // Dell reports the preset in E2 with something else in the high byte, like the input.
+                if let value = ddc.read(code) { values[code] = value.current & 0xFF }
+            }
+            DispatchQueue.main.async { completion(values) }
+        }
+    }
+
+    func setPictureMode(_ mode: PictureMode) {
+        queue.async { [self] in _ = ddc.write(mode.set.code, mode.set.value) }
+    }
+
     private var brightnessMax = 100
     private var lastMatchedBrightness: Int?
 
@@ -223,6 +240,7 @@ final class Follower {
         let snapshot = Snapshot(
             model: capabilities?.model,
             inputs: inputs,
+            pictureModes: capabilities.flatMap(PictureModes.init),
             own: own,
             detectedOwn: Inputs.detectedOwn(among: inputs, downstream: downstream),
             current: current,
