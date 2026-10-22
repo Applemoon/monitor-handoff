@@ -75,6 +75,13 @@ final class Follower {
                 self?.failures = 0
             }
         }
+        DistributedNotificationCenter.default().addObserver(forName: .init("com.apple.screenIsLocked"), object: nil, queue: nil) { [weak self] _ in
+            self?.queue.async { self?.leave(sleeping: false) }
+        }
+        // Synchronous: the write has to reach the monitor before the Mac is asleep.
+        center.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: nil) { [weak self] _ in
+            self?.queue.sync { self?.leave(sleeping: true) }
+        }
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now(), repeating: Follower.interval)
         timer.setEventHandler { [weak self] in self?.tick() }
@@ -83,12 +90,27 @@ final class Follower {
     }
 
     func select(_ input: UInt8) {
-        queue.async { [self] in
-            guard ddc.write(0x60, UInt16(input)) else { return publish() }
-            current = input
-            settleUntil = Date() + Follower.settle
-            follow(input)
-            publish()
+        queue.async { [self] in switchInput(to: input) }
+    }
+
+    private func switchInput(to input: UInt8) {
+        guard ddc.write(0x60, UInt16(input)) else { return publish() }
+        current = input
+        settleUntil = Date() + Follower.settle
+        follow(input)
+        publish()
+    }
+
+    /// This Mac locked or is going to sleep: a monitor showing it goes to the input picked in
+    /// Configure. Going to sleep, only the input is switched: the display leaves on the first tick
+    /// after wake.
+    private func leave(sleeping: Bool) {
+        let target = UInt8(clamping: defaults.integer(forKey: "onLockInput"))
+        guard target != 0, let own, current == own, target != own else { return }
+        if sleeping {
+            if ddc.write(0x60, UInt16(target)) { current = target }
+        } else {
+            switchInput(to: target)
         }
     }
 

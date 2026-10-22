@@ -1,10 +1,13 @@
 import SwiftUI
 
-/// Configure: a name for each input, hiding the unused ones, and which input is this Mac.
+/// Configure: a name for each input, hiding the unused ones, which input is this Mac and where
+/// the monitor goes when this Mac locks or sleeps.
 struct SettingsView: View {
     let inputs: [UInt8]
+    let own: UInt8?
     let detectedOwn: UInt8?
     @AppStorage("ownInput") private var ownInput = 0
+    @AppStorage("onLockInput") private var onLockInput = 0
 
     var body: some View {
         Form {
@@ -14,6 +17,10 @@ struct SettingsView: View {
             Picker("This Mac is on", selection: $ownInput) {
                 Text("Automatic" + (detectedOwn.map { " (\(Inputs.label($0)))" } ?? "")).tag(0)
                 ForEach(inputs, id: \.self) { Text(Inputs.label($0)).tag(Int($0)) }
+            }
+            Picker("When this Mac locks or sleeps", selection: $onLockInput) {
+                Text("Keep the monitor").tag(0)
+                ForEach(inputs.filter { $0 != own }, id: \.self) { Text("Switch to \(Inputs.name($0))").tag(Int($0)) }
             }
         }
         .formStyle(.grouped)

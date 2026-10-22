@@ -14,6 +14,8 @@ the menu.
 - A brightness slider sets the monitor's own backlight and opens at its current value.
 - Configure… gives the inputs names ("Personal", "Work"), hides unused ones and picks this Mac's
   input when the link type does not tell it.
+- When this Mac locks or sleeps while the monitor shows it, the monitor can switch to another
+  input, picked in Configure….
 - The menu bar icon is struck through while the monitor is handed over and shows a warning when
   a monitor showing this Mac stops answering.
 - Never removes the last screen: with the lid closed, the monitor stays.

@@ -125,7 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func configure() {
-        let view = SettingsView(inputs: snapshot.inputs, detectedOwn: snapshot.detectedOwn)
+        let view = SettingsView(inputs: snapshot.inputs, own: snapshot.own, detectedOwn: snapshot.detectedOwn)
         let window = settings ?? NSWindow(contentViewController: NSHostingController(rootView: view))
         window.contentViewController = NSHostingController(rootView: view)
         window.title = "Monitor Handoff"
