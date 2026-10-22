@@ -44,7 +44,8 @@ curl -fsSL https://raw.githubusercontent.com/Applemoon/monitor-handoff/main/inst
 
 Installs the latest release into ~/Applications and starts it; run it again to update. In a
 clone, `./install.sh` builds the code next to it instead, with the Command Line Tools (no Xcode).
-Open at Login is on from the first launch and off from the menu.
+Open at Login is on from the first launch and off from the menu. At launch and once a day the app
+asks GitHub for a newer release and offers it in the menu.
 
 A version tag (`v0.1.0`, matching `CFBundleShortVersionString` in `Info.plist`) makes GitHub
 Actions build the app and publish the release.

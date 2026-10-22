@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private let follower = Follower()
+    private let updates = Updates()
     private var statusItem: NSStatusItem!
     private var snapshot = Snapshot()
     private var settings: NSWindow?
@@ -36,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.updateIcon()
         }
         follower.start()
+        updates.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -62,8 +64,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
+        if let version = updates.available {
+            let update = NSMenuItem(title: "Update to \(version)", action: #selector(installUpdate), keyEquivalent: "")
+            update.target = self
+            menu.addItem(update)
+        }
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Monitor Handoff", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+    }
+
+    @objc private func installUpdate() {
+        updates.installAvailable()
     }
 
     /// The model, the brightness and the inputs.
