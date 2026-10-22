@@ -7,7 +7,7 @@ seconds: when it is not this Mac's input, the display leaves macOS as if its cab
 when the monitor comes back, so does the display. Switch with the monitor's own buttons or from
 the menu.
 
-<img src="screenshots/menu.png" width="317" alt="The menu">
+<img src="screenshots/menu.png" width="322" alt="The menu">
 
 - The menu lists the monitor's inputs, as the monitor itself reports them, checks the current one
   and switches on a click. This Mac's input carries a laptop icon.
