@@ -28,11 +28,12 @@ the menu.
 ## Install
 
 ```bash
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/Applemoon/monitor-handoff/main/install.sh | bash
 ```
 
-Builds the app, installs it into ~/Applications and starts it; run it again to update. Open at
-Login is on from the first launch and off from the menu.
+Downloads the source, builds it, installs it into ~/Applications and starts it; run it again to
+update. In a clone, `./install.sh` does the same with the code next to it. Open at Login is on
+from the first launch and off from the menu.
 
 ## Notes from the monitor it was built on (Alienware AW2724DM)
 

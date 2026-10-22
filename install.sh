@@ -1,6 +1,8 @@
 #!/bin/bash
 # Builds Monitor Handoff with the Command Line Tools alone (no Xcode), installs it into
 # ~/Applications (Open at Login registers that path) and starts it, replacing a running copy.
+# From a clone it builds the code next to it; piped from curl it downloads the code first:
+#   curl -fsSL https://raw.githubusercontent.com/Applemoon/monitor-handoff/main/install.sh | bash
 set -euo pipefail
 if [[ $(uname -m) != arm64 ]]; then
   echo "Monitor Handoff needs an Apple Silicon Mac."
@@ -12,7 +14,13 @@ if ! xcode-select -p >/dev/null 2>&1; then
 fi
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# Piped, the script has no file and no code next to it.
+if [[ -n ${BASH_SOURCE[0]:-} && -f $(dirname "${BASH_SOURCE[0]}")/Sources/Follower.swift ]]; then
+  here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+else
+  curl -fsSL https://github.com/Applemoon/monitor-handoff/archive/refs/heads/main.tar.gz | tar -xz -C "$tmp"
+  here=$tmp/monitor-handoff-main
+fi
 app="$tmp/Monitor Handoff.app"
 dest="$HOME/Applications/Monitor Handoff.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
