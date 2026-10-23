@@ -43,14 +43,22 @@ final class DDC {
         return nil
     }
 
-    /// Sends a DDC packet: the bytes after the length byte's address, plus the checksum.
+    /// Sends a DDC packet: the bytes after the length byte's address, plus the checksum. Written
+    /// twice, as MonitorControl does: over USB-C DisplayPort a MacBook Air M3 loses every single
+    /// write, so the monitor answers no request and takes no setting.
     private func send(_ bytes: [UInt8]) -> Bool {
         guard let service = externalService(), let write = DDC.writeI2C else { return false }
         var packet = bytes
         packet.append(bytes.reduce(UInt8(0x6E ^ 0x51), ^))
-        let result = packet.withUnsafeMutableBytes { write(service, 0x37, 0x51, $0.baseAddress!, UInt32($0.count)) }
-        if result != kIOReturnSuccess { self.service = nil }
-        return result == kIOReturnSuccess
+        for attempt in 0..<2 {
+            if attempt > 0 { usleep(10_000) }
+            let result = packet.withUnsafeMutableBytes { write(service, 0x37, 0x51, $0.baseAddress!, UInt32($0.count)) }
+            if result != kIOReturnSuccess {
+                self.service = nil
+                return false
+            }
+        }
+        return true
     }
 
     private func receive(_ count: Int) -> [UInt8]? {
