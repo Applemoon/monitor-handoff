@@ -142,16 +142,19 @@ final class DDC {
     }
 
     /// The link type the monitor gets from this Mac ("HDMI", "DP"): the Transport property
-    /// of the external framebuffer.
+    /// of the external framebuffer. Some Macs make it an IOMobileFramebufferShim, others an
+    /// AppleCLCD2 marked external (a MacBook Air M3 on macOS 26), like their built-in one.
     static func downstream() -> String? {
         var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IOMobileFramebufferShim"), &iterator) == KERN_SUCCESS else { return nil }
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IOMobileFramebuffer"), &iterator) == KERN_SUCCESS else { return nil }
         defer { IOObjectRelease(iterator) }
         var entry = IOIteratorNext(iterator)
         while entry != 0 {
+            let external = IOObjectConformsTo(entry, "IOMobileFramebufferShim") != 0
+                || IORegistryEntryCreateCFProperty(entry, "external" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? Bool == true
             let transport = IORegistryEntryCreateCFProperty(entry, "Transport" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? [String: Any]
             IOObjectRelease(entry)
-            if let downstream = transport?["Downstream"] as? String { return downstream }
+            if external, let downstream = transport?["Downstream"] as? String { return downstream }
             entry = IOIteratorNext(iterator)
         }
         return nil
