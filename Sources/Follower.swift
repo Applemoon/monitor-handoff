@@ -11,6 +11,7 @@ struct Snapshot {
     var handedOver = false
     var notResponding = false
     var severalMonitors = false
+    var disconnected = false
 }
 
 /// Follows the monitor's input: when it switches away from this Mac, the display leaves
@@ -39,6 +40,7 @@ final class Follower {
     private var screensAsleep = false
     private var settleUntil = Date.distantPast
     private var severalMonitors = false
+    private var disconnected = false
 
     /// The display removed from macOS. Kept across launches: a removed display is in no list.
     private var removed: CGDirectDisplayID? {
@@ -192,7 +194,10 @@ final class Follower {
         guard !screensAsleep else { return }
         // With two monitors, which channel answers and whose link type is read are guesses that
         // could remove the monitor showing this Mac: stand aside, with a removed display put back.
-        severalMonitors = DDC.externalCount() > 1
+        let externals = DDC.externalCount()
+        severalMonitors = externals > 1
+        // No external output carries a monitor: its cable is out.
+        disconnected = externals == 0
         if severalMonitors {
             if let id = removed, Displays.setEnabled(id, true) { removed = nil }
             return publish()
@@ -247,7 +252,8 @@ final class Follower {
             handedOver: removed != nil,
             // Only a monitor showing this Mac must answer; a handed-over one may be asleep.
             notResponding: failures >= Follower.failuresBeforeWarning && display != nil,
-            severalMonitors: severalMonitors)
+            severalMonitors: severalMonitors,
+            disconnected: disconnected)
         DispatchQueue.main.async { self.onChange?(snapshot) }
     }
 }

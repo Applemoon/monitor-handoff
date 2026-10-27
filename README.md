@@ -23,8 +23,8 @@ the menu.
   input when the link type does not tell it.
 - When this Mac locks or sleeps while the monitor shows it, the monitor can switch to another
   input, picked in Configure….
-- The menu bar icon is struck through while the monitor is handed over and shows a warning when
-  a monitor showing this Mac stops answering.
+- The menu bar icon is struck through while the monitor is handed over, dimmed while no monitor
+  is connected, and shows a warning when a monitor showing this Mac stops answering.
 - Never removes the last screen: with the lid closed, the monitor stays.
 
 ## Requirements

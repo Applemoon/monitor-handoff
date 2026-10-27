@@ -46,7 +46,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func updateIcon() {
         statusItem.button?.image = snapshot.notResponding || snapshot.severalMonitors
-            ? Icons.notResponding : snapshot.handedOver ? Icons.handedOver : Icons.monitor
+            ? Icons.notResponding : snapshot.handedOver && !snapshot.disconnected ? Icons.handedOver : Icons.monitor
+        // Not connected: the display dimmed, the look macOS gives an item that is off.
+        statusItem.button?.appearsDisabled = snapshot.disconnected
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
